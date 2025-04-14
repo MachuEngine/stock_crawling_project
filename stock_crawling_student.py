@@ -18,20 +18,68 @@ def extractLastPrice ( webUrl, DN ) :
        출력: 일일 종가 리스트(가장 오래된 종가부터 최근까지 순서대로 저장)
     """
     
-    pass    #### 학생이 작성
-    
-    print (pList,"size=",len(pList))   # 결과 확인 용(확인 후 주석처리)
+    pList = []  # 종가를 저장할 리스트
+    page = 1    # 페이지 번호는 1부터 시작
+
+    # DN개 이상의 종가를 모을 때까지 반복
+    while len(pList) < DN:
+        target_url = webUrl + str(page)
+        req = Request(target_url, headers={'User-Agent': 'Mozilla/5.0'})
+        html = urlopen(req)
+        soup = BeautifulSoup(html, "html.parser")
+
+        # summary 속성과 class를 이용하여 원하는 테이블 선택
+        table = soup.find("table", attrs={
+            "class": "type2",
+            "summary": "외국인 기관 순매매 거래량에 관한표이며 날짜별로 정보를 제공합니다."
+        })
+
+        if table is None:
+            print("테이블을 찾을 수 없습니다. URL 또는 HTML 구조를 확인하세요.")
+            break
+        
+        rows = table.find_all("tr")
+        
+        # 각 행에서 9개의 셀이 있는 경우(데이터 행)만 처리
+        for row in rows:
+            cells = row.find_all("td")
+            if len(cells) == 9:
+                # 두 번째 셀(td)에서 종가 데이터 추출 (예: <span class="tah p11">53,000</span>)
+                price_text = cells[1].get_text(strip=True)
+                if price_text and price_text != '-':  
+                    # 천 단위 구분 쉼표 제거 후 숫자로 변환
+                    try:
+                        price = float(price_text.replace(',', ''))
+                        pList.append(price)
+                    except Exception as e:
+                        print("가격 변환 에러:", e)
+                # 원하는 개수만큼 모으면 종료
+                if len(pList) >= DN:
+                    break
+        page += 1
+
+    # 추출된 리스트는 최신순으로 모였으므로, 가장 오래된 값이 맨 앞에 오도록 뒤집는다.
+    pList.reverse()  
+    print(pList, "size=", len(pList))  # 결과 확인 (필요시 주석 처리)
     return pList
 
-def makeMA (pList, numMA) :  
-    """이동평균선 리스트를 만든다
-       입력: pList(주식 종가 리스트), numMA (평균 낼 종가 수)
-       출력: mList (이동평균값 리스트)
+
+def makeMA(pList, numMA):
+    """이동평균선 리스트를 만든다.
+       입력: pList (주식 종가 리스트), numMA (평균 낼 기간)
+       출력: mList (이동평균값 리스트, pList와 동일한 길이; 초반에는 None 값 포함)
     """
-
-    pass   #### 학생이 작성
-
-    print (mList,"size=",len(mList))   # 결과 확인 용(확인 후 주석처리)
+    mList = []
+    # pList의 각 인덱스에 대해 numMA만큼의 구간 평균을 계산
+    for i in range(len(pList)):
+        if i < numMA - 1:
+            # 데이터가 부족한 초기 구간은 None을 채워 넣어 pList와 길이를 맞춘다.
+            mList.append(None)
+        else:
+            window = pList[i - numMA + 1: i + 1]
+            avg = sum(window) / numMA
+            mList.append(avg)
+    print(mList, "size=", len(mList))  # 결과 확인 (필요시 주석 처리)
     return mList
 
 
@@ -45,13 +93,13 @@ def inputCompanyAndDays ():
     print ('1:samsung, 2:lge, 3:hynix')  #관심있는 다른 회사로 시도해 보세요.
     inputName = input ('회사를 고르세요 : ')   
     if (inputName == '1'):
-        webUrl = 'http://finance.naver.com/item/frgn.nhn?code=005930&page='
+        webUrl = 'https://finance.naver.com/item/frgn.nhn?code=005930&page='
         companyName = 'samsung'
     elif (inputName == '2'):
-        webUrl = 'http://finance.naver.com/item/frgn.nhn?code=066570&page='
+        webUrl = 'https://finance.naver.com/item/frgn.nhn?code=066570&page='
         companyName = 'lge'
     elif (inputName == '3'):
-        webUrl = 'http://finance.naver.com/item/frgn.nhn?code=000660&page='
+        webUrl = 'https://finance.naver.com/item/frgn.nhn?code=000660&page='
         companyName = 'hynix'
     else:
         print("잘못된 입력입니다. 프로그램을 종료합니다.")
