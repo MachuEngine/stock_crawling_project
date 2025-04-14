@@ -60,7 +60,7 @@ def extractLastPrice ( webUrl, DN ) :
 
     # 추출된 리스트는 최신순으로 모였으므로, 가장 오래된 값이 맨 앞에 오도록 뒤집는다.
     pList.reverse()  
-    print(pList, "size=", len(pList))  # 결과 확인 (필요시 주석 처리)
+    # print(pList, "size=", len(pList)) # 확인 완료 
     return pList
 
 
@@ -79,7 +79,7 @@ def makeMA(pList, numMA):
             window = pList[i - numMA + 1: i + 1]
             avg = sum(window) / numMA
             mList.append(avg)
-    print(mList, "size=", len(mList))  # 결과 확인 (필요시 주석 처리)
+    # print(mList, "size=", len(mList))  # 확인 완료 
     return mList
 
 
